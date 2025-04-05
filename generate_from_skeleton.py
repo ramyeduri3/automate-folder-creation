@@ -61,7 +61,7 @@ def main():
     }
 
     template_dir = 'skeleton-redb'
-    output_dir = f'redb/'
+    output_dir = os.path.join('redb', f'{args.name}-redb')
 
     if os.path.exists(output_dir):
         print(f"❌ Output directory '{output_dir}' already exists. Aborting to prevent overwrite.")
