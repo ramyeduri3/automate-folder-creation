@@ -40,6 +40,17 @@ jobs:
             --region "${{ github.event.inputs.region }}" \
             --project "${{ github.event.inputs.project }}"
 
+      - name: Show generated folder structure
+        run: |
+          echo "📁 Listing all files:"
+          tree || find .  # fallback if tree isn't installed
+
+      - name: Show one of the generated files
+        run: |
+          echo "📄 Showing content of a sample file:"
+          cat */*redb*/redb-*.yaml || echo "File not found!"
+          
+
       - name: Commit & Push Changes
         run: |
           git config user.name "github-actions"
