@@ -22,18 +22,21 @@ def replace_placeholders_in_path(path, placeholders):
         path = path.replace(f'{{{key}}}', value)
     return path
 
-def process_folder(src, dest, placeholders):
+def process_folder(src, dest, placeholders, env_suffix):
     for root, dirs, files in os.walk(src):
-        relative_path = os.path.relpath(root, src)
-        dest_dir = os.path.join(dest, replace_placeholders_in_path(relative_path, placeholders))
-        os.makedirs(dest_dir, exist_ok=True)
-
         for file in files:
+            # Replace placeholders in content and file name
+            new_file_name = replace_placeholders_in_path(file, placeholders).replace('.yaml', f'-{env_suffix}.yaml')
+            dest_file = os.path.join(dest, new_file_name)
+
+            if os.path.exists(dest_file):
+                print(f"⚠️ Skipping existing file: {dest_file}")
+                continue
+
             src_file = os.path.join(root, file)
-            new_file_name = replace_placeholders_in_path(file, placeholders)
-            dest_file = os.path.join(dest_dir, new_file_name)
             shutil.copy2(src_file, dest_file)
             replace_placeholders_in_file(dest_file, placeholders)
+            print(f"✅ Created file: {dest_file}")
 
 def main():
     parser = argparse.ArgumentParser(description="Generate redb files from skeleton")
@@ -45,7 +48,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Input validation
+    # Validate inputs
     for arg_name in vars(args):
         value = getattr(args, arg_name)
         if not is_valid_name(value):
@@ -63,12 +66,13 @@ def main():
     template_dir = 'skeleton-redb'
     output_dir = os.path.join('redb', f'{args.name}-redb')
 
-    if os.path.exists(output_dir):
-        print(f"❌ Output directory '{output_dir}' already exists. Aborting to prevent overwrite.")
-        sys.exit(1)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"📁 Created folder: {output_dir}")
+    else:
+        print(f"📁 Folder already exists: {output_dir} — will append new files if needed")
 
-    process_folder(template_dir, output_dir, placeholders)
-    print(f"✅ Successfully generated files in: {output_dir}")
+    process_folder(template_dir, output_dir, placeholders, args.env)
 
 if __name__ == "__main__":
     main()
