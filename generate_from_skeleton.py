@@ -7,14 +7,14 @@ def replace_placeholders_in_file(file_path, placeholders):
         content = file.read()
 
     for key, value in placeholders.items():
-        content = content.replace(f'{{{{{key}}}}}', value)
+        content = content.replace(f'{{{key}}}', value)
 
     with open(file_path, 'w') as file:
         file.write(content)
 
 def replace_placeholders_in_path(path, placeholders):
     for key, value in placeholders.items():
-        path = path.replace(f'{{{{{key}}}}}', value)
+        path = path.replace(f'{{{key}}}', value)
     return path
 
 def process_folder(src, dest, placeholders):
@@ -49,7 +49,7 @@ def main():
     }
 
     template_dir = 'skeleton-redb'
-    output_dir = f'{args.name}-generated'
+    output_dir = f'redb/'
 
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
