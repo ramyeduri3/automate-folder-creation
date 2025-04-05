@@ -23,20 +23,28 @@ def replace_placeholders_in_path(path, placeholders):
     return path
 
 def process_folder(src, dest, placeholders, env_suffix):
+    files_to_generate = []
+    existing_files = []
+
     for root, dirs, files in os.walk(src):
         for file in files:
-            # Replace placeholders in content and file name
             new_file_name = replace_placeholders_in_path(file, placeholders).replace('.yaml', f'-{env_suffix}.yaml')
             dest_file = os.path.join(dest, new_file_name)
-
             if os.path.exists(dest_file):
-                print(f"⚠️ Skipping existing file: {dest_file}")
-                continue
+                existing_files.append(dest_file)
+            else:
+                files_to_generate.append((os.path.join(root, file), dest_file))
 
-            src_file = os.path.join(root, file)
-            shutil.copy2(src_file, dest_file)
-            replace_placeholders_in_file(dest_file, placeholders)
-            print(f"✅ Created file: {dest_file}")
+    if existing_files:
+        print("❌ The following files already exist and will not be overwritten:")
+        for f in existing_files:
+            print(f"   - {f}")
+        sys.exit(1)
+
+    for src_file, dest_file in files_to_generate:
+        shutil.copy2(src_file, dest_file)
+        replace_placeholders_in_file(dest_file, placeholders)
+        print(f"✅ Created file: {dest_file}")
 
 def main():
     parser = argparse.ArgumentParser(description="Generate redb files from skeleton")
@@ -48,7 +56,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Validate inputs
     for arg_name in vars(args):
         value = getattr(args, arg_name)
         if not is_valid_name(value):
@@ -70,7 +77,7 @@ def main():
         os.makedirs(output_dir)
         print(f"📁 Created folder: {output_dir}")
     else:
-        print(f"📁 Folder already exists: {output_dir} — will append new files if needed")
+        print(f"📁 Folder exists: {output_dir} — will check for duplicate files")
 
     process_folder(template_dir, output_dir, placeholders, args.env)
 
