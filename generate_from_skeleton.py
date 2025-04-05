@@ -1,6 +1,11 @@
 import argparse
 import os
 import shutil
+import sys
+import re
+
+def is_valid_name(name):
+    return re.match(r'^[a-zA-Z0-9-_]+$', name)
 
 def replace_placeholders_in_file(file_path, placeholders):
     with open(file_path, 'r') as file:
@@ -40,6 +45,13 @@ def main():
 
     args = parser.parse_args()
 
+    # Input validation
+    for arg_name in vars(args):
+        value = getattr(args, arg_name)
+        if not is_valid_name(value):
+            print(f"❌ Invalid value for '{arg_name}': '{value}'. Only letters, numbers, hyphens, and underscores are allowed.")
+            sys.exit(1)
+
     placeholders = {
         'placeholder': args.name,
         'env': args.env,
@@ -52,10 +64,11 @@ def main():
     output_dir = f'redb/'
 
     if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
+        print(f"❌ Output directory '{output_dir}' already exists. Aborting to prevent overwrite.")
+        sys.exit(1)
 
     process_folder(template_dir, output_dir, placeholders)
-    print(f"✅ Generated files in: {output_dir}")
+    print(f"✅ Successfully generated files in: {output_dir}")
 
 if __name__ == "__main__":
     main()
