@@ -1,0 +1,49 @@
+name: Generate RedB Resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        required: true
+        description: 'Name to replace placeholder'
+      env:
+        required: true
+        description: 'Environment name'
+      team:
+        required: true
+        description: 'Team name'
+      region:
+        required: true
+        description: 'Region'
+      project:
+        required: true
+        description: 'Project name'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run generation script
+        run: |
+          python generate_from_skeleton.py \
+            --name "${{ github.event.inputs.name }}" \
+            --env "${{ github.event.inputs.env }}" \
+            --team "${{ github.event.inputs.team }}" \
+            --region "${{ github.event.inputs.region }}" \
+            --project "${{ github.event.inputs.project }}"
+
+      - name: Commit & Push Changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Generated structure for ${{ github.event.inputs.name }}"
+          git push

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Config
+metadata:
+  name: {placeholder}
+  environment: {env}
+  team: {team}
+  region: {region}
+  project: {project}
