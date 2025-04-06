@@ -10,19 +10,17 @@ def is_valid_name(name):
 def replace_placeholders_in_file(file_path, placeholders):
     with open(file_path, 'r') as file:
         content = file.read()
-
     for key, value in placeholders.items():
-        content = content.replace(f'{{{{{key}}}}}', value)
-
+        content = content.replace(f'{{{key}}}', value)
     with open(file_path, 'w') as file:
         file.write(content)
 
 def replace_placeholders_in_path(path, placeholders):
     for key, value in placeholders.items():
-        path = path.replace(f'{{{{{key}}}}}', value)
+        path = path.replace(f'{{{key}}}', value)
     return path
 
-def process_folder(src, dest, placeholders, env_suffix):
+def process_folder(src, dest, placeholders):
     files_to_generate = []
     existing_files = []
 
@@ -32,12 +30,8 @@ def process_folder(src, dest, placeholders, env_suffix):
         os.makedirs(target_dir, exist_ok=True)
 
         for file in files:
-            filename = replace_placeholders_in_path(file, placeholders)
-
-            if "{env}" not in file and not filename.startswith("chart."):
-                filename = filename.replace(".yaml", f"-{env_suffix}.yaml")
-
-            dest_file = os.path.join(target_dir, filename)
+            replaced_file_name = replace_placeholders_in_path(file, placeholders)
+            dest_file = os.path.join(target_dir, replaced_file_name)
             src_file = os.path.join(root, file)
 
             if os.path.exists(dest_file):
@@ -97,7 +91,7 @@ def main():
     else:
         print(f"Folder exists: {output_dir} — will check for duplicate files")
 
-    process_folder(template_dir, output_dir, placeholders, args.env)
+    process_folder(template_dir, output_dir, placeholders)
 
 if __name__ == "__main__":
     main()
