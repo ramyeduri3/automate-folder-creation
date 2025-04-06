@@ -30,9 +30,10 @@ def is_common_file(relative_path, placeholders):
     }
     return relative_path in common_files
 
-def process_folder(src, dest, placeholders):
+def process_folder(src, dest, placeholders, dry_run=False):
     files_to_generate = []
     existing_files = []
+    skipped_common = []
 
     for root, dirs, files in os.walk(src):
         relative_path = os.path.relpath(root, src)
@@ -47,12 +48,24 @@ def process_folder(src, dest, placeholders):
 
             if os.path.exists(dest_file):
                 if is_common_file(relative_file_path, placeholders):
-                    print(f"ℹ️ Skipping existing common file: {dest_file}")
+                    skipped_common.append(dest_file)
                     continue
                 else:
                     existing_files.append(dest_file)
             else:
                 files_to_generate.append((src_file, dest_file))
+
+    if dry_run:
+        print("🔍 DRY RUN PREVIEW")
+        for _, dest_file in files_to_generate:
+            print(f"📝 Would create: {dest_file}")
+        for skipped in skipped_common:
+            print(f"ℹ️ Would skip existing common file: {skipped}")
+        if existing_files:
+            print("❌ The following env-specific files already exist and would block the run:")
+            for f in existing_files:
+                print(f"   - {f}")
+        return
 
     if existing_files:
         print("❌ The following env-specific files already exist and will not be overwritten:")
@@ -76,12 +89,13 @@ def main():
     parser.add_argument('--tlsmode', required=True)
     parser.add_argument('--env', required=True)
     parser.add_argument('--databasesecretname', required=True)
+    parser.add_argument('--dry-run', action='store_true', help='Preview only, do not write files')
 
     args = parser.parse_args()
 
     for arg_name in vars(args):
         value = getattr(args, arg_name)
-        if not is_valid_name(value):
+        if arg_name != "dry_run" and not is_valid_name(value):
             print(f"❌ Invalid value for '{arg_name}': '{value}'. Only letters, numbers, hyphens, and underscores are allowed.")
             sys.exit(1)
 
@@ -106,7 +120,7 @@ def main():
     else:
         print(f"📁 Folder exists: {output_dir} — will check for duplicate files")
 
-    process_folder(template_dir, output_dir, placeholders)
+    process_folder(template_dir, output_dir, placeholders, dry_run=args.dry_run)
 
 if __name__ == "__main__":
     main()
