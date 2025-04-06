@@ -20,6 +20,16 @@ def replace_placeholders_in_path(path, placeholders):
         path = path.replace(f'{{{key}}}', value)
     return path
 
+def is_common_file(relative_path, placeholders):
+    common_files = {
+        "chart.yaml",
+        "templates/role.yaml",
+        "templates/rolebinding.yaml",
+        "templates/ingress.yaml",
+        f"redb-{placeholders['appshortname']}-np.yaml"
+    }
+    return relative_path in common_files
+
 def process_folder(src, dest, placeholders):
     files_to_generate = []
     existing_files = []
@@ -31,16 +41,21 @@ def process_folder(src, dest, placeholders):
 
         for file in files:
             replaced_file_name = replace_placeholders_in_path(file, placeholders)
+            relative_file_path = os.path.normpath(os.path.join(relative_path, replaced_file_name))
             dest_file = os.path.join(target_dir, replaced_file_name)
             src_file = os.path.join(root, file)
 
             if os.path.exists(dest_file):
-                existing_files.append(dest_file)
+                if is_common_file(relative_file_path, placeholders):
+                    print(f"ℹ️ Skipping existing common file: {dest_file}")
+                    continue
+                else:
+                    existing_files.append(dest_file)
             else:
                 files_to_generate.append((src_file, dest_file))
 
     if existing_files:
-        print("The following files already exist and will not be overwritten:")
+        print("❌ The following env-specific files already exist and will not be overwritten:")
         for f in existing_files:
             print(f"   - {f}")
         sys.exit(1)
@@ -48,7 +63,7 @@ def process_folder(src, dest, placeholders):
     for src_file, dest_file in files_to_generate:
         shutil.copy2(src_file, dest_file)
         replace_placeholders_in_file(dest_file, placeholders)
-        print(f"Created file: {dest_file}")
+        print(f"✅ Created file: {dest_file}")
 
 def main():
     parser = argparse.ArgumentParser(description="Generate redb files from skeleton")
@@ -67,7 +82,7 @@ def main():
     for arg_name in vars(args):
         value = getattr(args, arg_name)
         if not is_valid_name(value):
-            print(f"Invalid value for '{arg_name}': '{value}'. Only letters, numbers, hyphens, and underscores are allowed.")
+            print(f"❌ Invalid value for '{arg_name}': '{value}'. Only letters, numbers, hyphens, and underscores are allowed.")
             sys.exit(1)
 
     placeholders = {
@@ -87,9 +102,9 @@ def main():
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print(f"Created folder: {output_dir}")
+        print(f"📁 Created folder: {output_dir}")
     else:
-        print(f"Folder exists: {output_dir} — will check for duplicate files")
+        print(f"📁 Folder exists: {output_dir} — will check for duplicate files")
 
     process_folder(template_dir, output_dir, placeholders)
 
